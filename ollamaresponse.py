@@ -50,19 +50,16 @@ def askOllama(text):
         data=[query_embedding], 
         anns_field="paragraph_contents",  # Adjust to match your schema
         param=search_params, 
-        limit=5
+        limit=5,
+        output_fields=["paragraph_contents","ids"]
     )
     ids_to_retrieve = []
     for result in results[0]:
-        print(result)
-        print("/n")
         print(f"ID: {result.ids}, Distance: {result.distance}")
-        ids_to_retrieve.append(result.id)  # Collect the IDs for further processing
-    
-    print(f"IDs to retrieve: {ids_to_retrieve}")
+        ids_to_retrieve.append(int(result.ids))  # Collect the IDs for further processing
+    print(ids_to_retrieve)
+    context = "\n".join([fetch_data_from_sqlite(res)[0][0] for res in ids_to_retrieve])  # Access the first row and the first column
 
-    # Fetch the corresponding data from SQLite
-    context = "\n".join([fetch_data_from_sqlite(id) for id in ids_to_retrieve])
     return context
 
 def generateresponse(text) : # Generate a response using Ollama
@@ -83,9 +80,10 @@ def fetch_data_from_sqlite(ids):
     
     # Fetch a single data entry from the specified table
     query = "SELECT Paragraph_Contents FROM grass WHERE id = ?"
-    cursor.execute(query, (ids,))  # Tuple passed to parameterized query
+    print(cursor.execute(query, (ids,)))  # Tuple passed to parameterized query
     # Adjust query as needed
     row = cursor.fetchall()
+    print(row)
     conn.close()
     return row
 
