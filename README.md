@@ -50,8 +50,8 @@ If the installation goes through, you should be able to run the command:
     python test.py
     
 From here you should be able to see a connection between Milvus and an output should be pushed out. If not please contact the Database Team. 
-There are some changes to bbe made to the docker Milvus Yaml
-  In Docker open the required container, view files for the Milvus-Standalone container, In the folder milvus find a folder configs which should have the yaml file. Change the value at Line 271 i.e. "maxVectorFieldNum: 4" from4 to 10
+There are some changes to be made to the docker Milvus Yaml.
+In Docker open the required container, view files for the Milvus-Standalone container. In the folder milvus, find a folder configs which should have the yaml file. Change the value at Line 271 i.e. "maxVectorFieldNum: 4" from 4 to 10.
 
 # Possible Errors:
 
