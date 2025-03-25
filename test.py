@@ -33,9 +33,14 @@ def create_collection():
     fields = [
         FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),  # Primary key
         FieldSchema(name="ids", dtype=DataType.INT16),
-        FieldSchema(name="identifier", dtype=DataType.VARCHAR, max_length=500),       # Unique identifier
-        FieldSchema(name="paragraph_contents", dtype=DataType.FLOAT_VECTOR, dim=384), # Embedded vector data
-        FieldSchema(name="table_contents", dtype=DataType.FLOAT_VECTOR, dim=384)      # Embedded vector data
+        FieldSchema(name="identifier_text", dtype=DataType.VARCHAR, max_length=4000),       # Unique identifier
+        FieldSchema(name="identifier_emb", dtype=DataType.FLOAT_VECTOR, dim=384),
+        FieldSchema(name="grass_Name", dtype=DataType.FLOAT_VECTOR, dim=384 ),
+        FieldSchema(name="disease", dtype=DataType.FLOAT_VECTOR, dim=384 ),
+        FieldSchema(name="pathogen", dtype=DataType.FLOAT_VECTOR, dim=384 ),
+        FieldSchema(name="affiliation", dtype=DataType.FLOAT_VECTOR, dim=384 ),
+        FieldSchema(name="paragraph_emb", dtype=DataType.FLOAT_VECTOR, dim=384), # Embedded vector data
+        FieldSchema(name="table_emb", dtype=DataType.FLOAT_VECTOR, dim=384)      # Embedded vector data
     ]
     
     schema = CollectionSchema(fields=fields, description="Turf grass data collection")
@@ -52,23 +57,20 @@ def create_collection():
     return collection
 
 def create_index(collection):
-    # Check if an index already exists on the 'table_contents' field
-    if collection.indexes:
-        print("Index already exists on 'table_contents'. Skipping index creation.")
-        return
-    
-    # Define index parameters
     index_params = {
-        "metric_type": "IP",  # "L2" for Euclidean; use "IP" for cosine similarity
+        "metric_type": "IP",  
         "index_type": "IVF_FLAT",
-        "params": {"nlist": 384}  # Number of clusters; adjust based on data size and performance needs
+        "params": {"nlist": 384}
     }
-    
-    # Create the index on the 'table_contents' field
-    collection.create_index(field_name="paragraph_contents", index_params=index_params)
-    collection.create_index(field_name="table_contents", index_params=index_params)
 
-    print("Indexes created successfully on paragraph and table contents.")
+    index_fields = ["identifier_emb", "grass_Name", "disease", "pathogen", "affiliation", "paragraph_emb", "table_emb"]
+    
+    for field in index_fields:
+        if not any(idx.field_name == field for idx in collection.indexes):
+            collection.create_index(field_name=field, index_params=index_params)
+            print(f"Index created on {field}.")
+        else:
+            print(f"Index already exists on {field}. Skipping.")
 
 
 
@@ -83,35 +85,38 @@ def fetch_data_from_sqlite(db_path, table_name):
     return row
 
 def embed_and_insert_data_from_db(collection, db_path, table_name):
-    # Fetch a single row from the SQLite database
-    data_entry = fetch_data_from_sqlite(db_path, table_name)
-    if data_entry is None:
+    data_entries = fetch_data_from_sqlite(db_path, table_name)
+    if not data_entries:
         print("No data found in the database.")
         return
-    # Initialize the embedding model
-   
-        
-    for row in data_entry:
-        # Assuming the data entry structure is (id, identifier, paragraph content, table content); adjust as necessary
-        ids = row[0]
-        identi = row[1]
-        identifier = sanitize_identifier(identi[:250], mode="remove")
-        paragraph_content = row[2]
-        table_content = row[3]
 
-        # Check to see if identifier was already inserted
+    for row in data_entries:
+        ids, identifier, paragraph_content, table_content, _, disease, pathogen, affiliation, _, grass_Name = row
+
         if identifier_exists(collection, ids):
-            print(f"Identifier: '{identifier}' already exists in Milvus. Skipping insert.\n")
-        else:    
-            # Generate embedding for the content
-            embedding_paragraph = model.encode(paragraph_content).tolist()  # Convert embedding to list
+            print(f"Identifier: '{identifier}' already exists. Skipping insert.")
+            continue
 
-            embedding_table = model.encode(table_content).tolist()  # Convert embedding to list
+        # Generate embeddings
+        embedding_identifier = model.encode(identifier if identifier else "").tolist()
+        embedding_paragraph = model.encode(paragraph_content if paragraph_content else "").tolist()
+        embedding_table = model.encode(table_content if table_content else "").tolist()
+        embedding_grass_Name = model.encode(grass_Name if grass_Name else "").tolist()
+        embedding_disease = model.encode(disease if disease else "").tolist()
+        embedding_pathogen = model.encode(pathogen if pathogen else "").tolist()
+        embedding_affiliation = model.encode(affiliation if affiliation else "").tolist()
 
-            # Insert data into the Milvus collection
-            collection.insert([[ids],[identifier], [embedding_paragraph], [embedding_table]])
-            collection.flush()
-            print("Single data entry from SQLite inserted successfully.")
+
+        # Insert data into Milvus
+        collection.insert([
+            [ids], [identifier], 
+            [embedding_identifier],
+            [embedding_paragraph], [embedding_table], 
+            [embedding_grass_Name], [embedding_disease], 
+            [embedding_pathogen], [embedding_affiliation]
+        ])
+        collection.flush()
+        print(f"Inserted data for id: {ids}")
 
 def retrieve_all_data(collection):
     # Load the collection into memory
