@@ -23,7 +23,10 @@ If this does not work try the following command to see if any of them work:
     
     sudo docker compose up -d
 
-After the command goes through, on the docker application you should see a new container. You can now start the ports and connection to the database by turning it on using docker. 
+After the command goes through, on the docker application you should see a new container.
+There are some changes to be made to the docker Milvus Yaml.
+In Docker open the required container, view files for the Milvus-Standalone container. In the folder milvus, find a folder configs which should have the yaml file. Change the value at Line 271 i.e. "maxVectorFieldNum: 4" from 4 to 10.
+You can now start the ports and connection to the database by turning it on using docker. 
 
 Now you want to make sure you have all the imports used in the test.py file installed on your system. If you do not have pip, install pip. This will allow you to install python moduls necessary for the vector database
 
@@ -50,8 +53,7 @@ If the installation goes through, you should be able to run the command:
     python test.py
     
 From here you should be able to see a connection between Milvus and an output should be pushed out. If not please contact the Database Team. 
-There are some changes to be made to the docker Milvus Yaml.
-In Docker open the required container, view files for the Milvus-Standalone container. In the folder milvus, find a folder configs which should have the yaml file. Change the value at Line 271 i.e. "maxVectorFieldNum: 4" from 4 to 10.
+
 
 # Possible Errors:
 
