@@ -3,7 +3,7 @@ from transformers import (
     AutoModelForCausalLM,
     Trainer,
     TrainingArguments,
-    DataCollatorForLanguageModeling
+    DataCollatorForLanguageModeling,
 )
 from datasets import load_dataset
 import torch
@@ -17,7 +17,7 @@ dataset = load_dataset("json", data_files={"train": "research_papers.jsonl"})
 # -----------------------------
 # 2. Load Model & Tokenizer
 # -----------------------------
-model_name = "your-llama-3.2-model"  # Replace with your model name
+model_name = 'mistralai/Mistral-7B-Instruct-v0.2'  # Replace with your model name
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
 
@@ -75,7 +75,7 @@ data_collator = DataCollatorForLanguageModeling(
 )
 
 training_args = TrainingArguments(
-    output_dir="./llama3.2-finetuned",
+    output_dir="./mistral7b-finetuned",
     num_train_epochs=3,
     per_device_train_batch_size=4,
     gradient_accumulation_steps=1,
@@ -100,5 +100,5 @@ trainer = Trainer(
 # 7. Train and Save the Model
 # -----------------------------
 trainer.train()
-trainer.save_model("./llama3.2-finetuned")
-tokenizer.save_pretrained("./llama3.2-finetuned")
+trainer.save_model("./minstral-finetuned")
+tokenizer.save_pretrained("./minstral-finetuned")
